@@ -28,160 +28,22 @@
               <p class="end-time">16:40</p>
           </div>
           <div class="event 6">
-              <p class="start-time">16:40</p>
+              <p class="start-time">16:50</p>
               <p class="class-number">6</p>
               <p class="end-time">18:30</p>
           </div>
+          <div class="event 7">
+              <p class="start-time">18:40</p>
+              <p class="class-number">7</p>
+              <p class="end-time">20:20</p>
+          </div>
+          <div class="event 8">
+              <p class="start-time">20:30</p>
+              <p class="class-number">8</p>
+              <p class="end-time">22:00</p>
+          </div>
       </div>
-      <DayView v-for="day in calendar" v-bind:events="day" />
-      
-      <!-- <div class="dayview monday">
-        <div class="event 1">
-            <div class="container">
-              <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-              <h3>Остроухова Светлана Николаевна</h3>
-              <h3>Лекционные занятия</h3>
-            </div>
-        </div>
-        <div class="event 2">
-            <div class="container">
-                <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-                <h3>Остроухова Светлана Николаевна</h3>
-                <h3>Лабораторные занятия</h3>
-              </div>
-          </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-
-        </div>
-        <div class="event 5">
-
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div> -->
-      <!-- <div class="dayview tuesday">
-        <div class="event 1">
-
-        </div>
-        <div class="event 2">
-
-        </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-
-        </div>
-        <div class="event 5">
-
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div>
-      <div class="dayview wednesday active">
-        <div class="event 1">
-
-        </div>
-        <div class="event 2">
-          <div class="container">
-              <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-              <h3>Остроухова Светлана Николаевна</h3>
-              <h3>Лабораторные занятия</h3>
-          </div>
-        </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-          <div class="container">
-              <h2><span>L607</span> Английский для профессиональных / специфических целей (English for Specific Purposes / ESP)</h2>
-              <h3>Ардеева Галина Леонидовна</h3>
-              <h3>Практические занятия</h3>
-          </div>
-        </div>
-        <div class="event 5">
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div>
-      <div class="dayview thursday">
-        <div class="event 1">
-
-        </div>
-        <div class="event 2">
-
-        </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-          <div class="container">
-              <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-              <h3>Остроухова Светлана Николаевна</h3>
-              <h3>Лабораторные занятия</h3>
-          </div>
-        </div>
-        <div class="event 5">
-
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div>
-      <div class="dayview friday">
-        <div class="event 1">
-          <div class="container">
-              <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-              <h3>Остроухова Светлана Николаевна</h3>
-              <h3>Лабораторные занятия</h3>
-          </div>
-        </div>
-        <div class="event 2">
-
-        </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-
-        </div>
-        <div class="event 5">
-
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div>
-      <div class="dayview saturday">
-        <div class="event 1">
-          <div class="container">
-              <h2><span>D743</span> Алгоритмы и структуры данных</h2>
-              <h3>Остроухова Светлана Николаевна</h3>
-              <h3>Лабораторные занятия</h3>
-          </div>
-        </div>
-        <div class="event 2">
-
-        </div>
-        <div class="event 3">
-
-        </div>
-        <div class="event 4">
-
-        </div>
-        <div class="event 5">
-
-        </div>
-        <div class="event 6">
-
-        </div>
-      </div> -->
+      <DayView v-for="day in calendar" :key="day.number" :events="day.classes" />
     </div>
   </main>
 </template>
@@ -194,7 +56,6 @@ export default {
   components: {
     DayView
   },
-  props: ['calendar']
+  props: ['calendar', 'classes']
 }
-
 </script>
