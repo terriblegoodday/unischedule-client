@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import Header from '@/components/Header'
 
 describe('Header.vue', () => {
