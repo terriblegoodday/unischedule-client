@@ -1,6 +1,6 @@
 # test-scheduler-client
 
-> A Vue.js project
+> A schedule SPA for my university
 
 ## Build Setup
 
