@@ -1,34 +1,150 @@
 <template>
-  <div id="app">
-    <Header />
-    <router-view/>
+  <div :class="{'modal-open': currentEvent}" id="app" >
+    <vue-progress-bar></vue-progress-bar>
+    <Header v-on:changeGroup="didChangeGroup" v-on:changeWeek="didChangeWeek" 
+      v-on:changeDay="didChangeDay"
+      :isWeekEven="isWeekEven" 
+      :currentGroup="currentGroup" 
+      :currentDay="currentDay"
+      :groups="groups" 
+      :isMobile="mobile" />
+    <CalendarView v-show="!mobile" :calendar="calendar" :classes="calendar" />
+    <MobileCalendarView v-show="mobile" :calendar="calendar" :classes="calendar" :day="currentDay" />
+    <EventView v-bind:event="currentEvent" />
   </div>
 </template>
 
 <script>
+import defaults from './defaults'
+import gql from 'graphql-tag'
+import CalendarView from './components/CalendarView'
+import EventView from './components/EventView'
+import EventBus from './eventbus'
 import Header from './components/Header'
+import MobileCalendarView from './components/MobileCalendarView'
 
 export default {
+name: 'App',
   components: {
-    Header
+    CalendarView,
+    EventView,
+    Header,
+    MobileCalendarView
   },
-  name: 'App'
+  data () {
+    return {
+      currentDay: 0,
+      currentEvent: null,
+      isWeekEven: defaults.DEFAULTWEEK,
+      calendar: [],
+      groups: {},
+      currentGroup: defaults.CURRENTGROUP,
+      mobile: defaults.MOBILECONDITION
+    }
+  },
+  created () {
+    addEventListener('resize', () => {
+      this.mobile = innerWidth <= 720
+    })
+  },
+  methods: {
+    didChangeWeek: function() {
+      this.isWeekEven = !this.isWeekEven
+    },
+    didChangeGroup: function(group) {
+      this.currentGroup = group
+    },
+    didChangeDay: function(day) {
+      this.currentDay = day
+    }
+  },
+  apollo: {
+    groups: {
+      query: gql`
+        query GetClasses {
+          groups: getAllGroups {
+            code
+            id
+          }
+        }
+      `,
+      fetchPolicy: 'cache-and-network'
+    },
+    calendar: {
+      query: gql`
+        query GetCalendar($weekType: WeekType!, $groupId: Int!) {
+          calendar: getCalendar(groupId: $groupId, weekType: $weekType) {
+            number
+            classes {
+              id
+              type
+              place
+              description
+              number
+              weekDay
+              week
+              
+              teacher {
+                fullName
+                department
+              }
+
+              formattedType @client
+              time @client
+            }
+
+          }
+        }
+      `,
+      variables () {
+        return {
+          weekType: this.isWeekEven ? "EVEN" : "ODD",
+          groupId: parseInt(this.currentGroup.id) || 1
+        }
+      },
+      watchLoading (isLoading) {
+        if (isLoading) this.$Progress.start();
+        else this.$Progress.finish();
+      },
+      fetchPolicy: 'cache-and-network'
+    }
+  },
+  mounted: function() {
+    EventBus.$on('showModalWith', (event) => {
+      this.currentEvent = event
+    })
+  }
 }
 </script>
 
+
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style>
+:root {
+  --blue-primary-color: #0096d5;
+  --blue-active-color: #00A2E7;
+}
+
 html,
 body {
   width: 100%;
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Droid Sans", "Helvetica Neue";
   -webkit-font-smoothing: antialised;
 }
 
+.modal-open {
+  height: 100%;
+  overflow: auto;
+}
+
+#app {
+  width: 100%;
+}
+
 .navbar {
-  background: rgba(255, 255, 255, .9);
-  -webkit-backdrop-filter: blur(25px);
+  background: rgba(255, 255, 255);
   height: 68px;
   z-index: 250;
   width: 100%;
@@ -58,8 +174,15 @@ body {
   margin-right: 25px;
 }
 
-.study-groups .study-group,
-.settings {
+.study-groups .study-group {
+  margin-right: 10px;
+}
+
+.study-groups .study-group span {
+  margin-left: 10px;
+}
+
+.study-groups .study-group {
   border: none;
   height: 40px;
   font-size: 18px;
@@ -68,12 +191,14 @@ body {
   background: rgba(0, 0, 0, .1);
   padding-right: 12px;
   padding-left: 12px;
+  box-sizing: border-box;
+  outline: none;
+  cursor: default;
 }
 
-.study-groups .study-group,
-.settings {
-  background: rgba(0,0,0,.1);
-  outline: none;
+.study-groups .study-group:focus {
+  background: rgba(0, 0, 0, .13);
+  cursor: text;
 }
 
 .settings {
@@ -168,41 +293,8 @@ main .container h2 {
   margin-left: 3px;
 }
 
-@media screen and (max-width: 1024px) {
-  .favourites-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media screen and (max-width: 900px) {
-  .brand {
-    display: none;
-  }
-  .study-groups {
-    margin-left: 0;
-  }
-}
-
-@media screen and (max-width: 736px) {
-  .favourites-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .search {
-    display: none;
-  }
-}
-
-@media screen and (max-width: 512px) {
-  .favourites-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-  .settings {
-    display: none;
-  }
-}
-
 .study-groups .study-group.primary {
-  background: #0096d5;
+  background: var(--blue-primary-color);
   color: #ffffff;
 }
 
@@ -254,10 +346,13 @@ main .container h2 {
 
 .dayview {
   flex-grow: 1;
+  flex-shrink: 1;
+  overflow: hidden;
   width: 100%;
 }
 
 .event .container {
+  box-shadow: 0 3px 15px 0 rgba(220,220,220,0.50);
   width: 100%;
   height: 190px;
   padding: 10px;
@@ -266,6 +361,8 @@ main .container h2 {
   color: white;
   border-radius: 6px;
   border-left: 5px solid rgba(24, 151, 211);
+  cursor: pointer;
+  word-wrap: break-word;
 }
 
 .event .container h2 {
@@ -316,6 +413,7 @@ main .container h2 {
   box-sizing: border-box;
   width: 100%;
   font-weight: 600;
+  overflow: hidden;
 }
 
 .weekdays-view .space {
@@ -326,7 +424,7 @@ main .container h2 {
   height: 40px;
 }
 
-.weekselector {
+.button {
   display: inline-block;
   line-height: 40px;
   border: none;
@@ -341,16 +439,27 @@ main .container h2 {
   padding-left: 20px;
 }
 
+.button:active, .button:focus {
+  outline: none;
+  background: rgba(0, 0, 0, .13);
+}
+
+.button.shadow {
+  box-shadow: 0 2px 10px 0 rgba(220,220,220,0.50);
+}
+
+.weekselector:active {
+  background: rgba(0, 0, 0, .13);
+}
+
 .weekselector.even {
   border-radius: 20px 0 0 20px;
   padding-right: 15px;
-  margin-right: -3px;
 }
 
 .weekselector.noneven {
   border-radius: 0 20px 20px 0;
   padding-left: 15px;
-  margin-right: 15px;
 }
 
 .weekselector input {
@@ -361,12 +470,189 @@ main .container h2 {
   width: 0;
 }
 
-.weekselector.primary {
-  background: #0096d5;
+.button.primary {
+  background: var(--blue-primary-color);
   color: white;
+}
+
+.button.primary:active, .button.primary:focus {
+  background: var(--blue-active-color);
 }
 
 main {
   margin-top: 100px;
+} 
+
+.dropdown-inner {
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 18px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 15px 0 rgba(0,0,0,.15);
+}
+
+.item-container {
+  font-weight: 600;
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.item-container p {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.active-item p {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.event .container h2 {
+  font-size: 1.2vw;
+}
+.event .container h3 {
+  font-size: 1.1vw;
+}
+
+.weekday-switcher {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  padding-left: 25px;
+  padding-right: 25px;
+  box-sizing: border-box;
+  height: 32px;
+}
+
+.weekday-switcher .dayselector {
+  user-select: none;
+  -webkit-user-select: none;
+  text-align: center;
+  padding-top: 5px;
+  font-weight: 600;
+  border-radius: 16px;
+  line-height: 20px;
+  text-align: center;
+  vertical-align: middle;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+.dayselector.primary {
+  background-color: var(--blue-primary-color);
+  color: white;
+  box-shadow: 0 3px 15px 0 rgba(0,0,0,0.12);
+}
+
+.dayselector input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+@media screen and (max-width: 1440px) {
+  .favourites-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+}
+
+@media screen and (max-width: 900px) {
+  .brand {
+    display: none;
+  }
+  .study-groups {
+    margin-left: 0;
+  }
+  .weekdays-view .weekday {
+    font-size: 12px;
+  }
+  .event .container {
+    padding: 5px;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  main {
+    margin-top: 111px;
+  }
+  .favourites-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .search {
+    display: none;
+  }
+  .navbar .calendar-container {
+    margin-left: 0;
+  }
+  .navbar .calendar-container {
+    margin-top: 3px;
+  }
+  .navbar {
+    height: 110px;
+  }
+  .weekday-switcher .dayselector {
+    flex-basis: 100%;
+  }
+  .event .container h2 {
+    font-size: 6vw;
+  }
+  .event .container h3 {
+    font-size: 5vw;
+  }
+  .event .container .teacher {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .favourites-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .settings {
+    display: none;
+  }
+  .dropdown-container {
+    width: 80px;
+  }
+  .study-group {
+    width: 80px !important;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  main {
+    margin-top: 92px;
+  }
+  .navbar {
+    height: 92px;
+  }
+  .navbar .container {
+    height: 50px;
+  }
+  .dropdown-container {
+    width: 60px;
+  }
+  .study-group {
+    font-size: 12px !important;
+    height: 30px !important;
+    width: 60px !important;
+    line-height: 30px;
+  }
+  .button {
+    font-size: 12px;
+    height: 30px;
+    line-height: 30px;
+  }
+  .dayselector {
+    font-size: 12px;
+  }
 }
 </style>
